@@ -1,18 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Testi: Ympyrä</title>
+    <title>Sarjakuva: Hahmo</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/3.6.2/fabric.min.js"></script>
     <style>
         body { margin: 20px; }
         #canvas-container { border: 1px solid black; }
         canvas { border: 1px solid gray; }
+        button { padding: 10px 15px; margin: 5px; }
     </style>
 </head>
 <body>
-    <button onclick="lisaaYmpyra()">Lisää ympyrä</button>
+    <button onclick="lisaaHahmo()">Lisää hahmo</button>
     <div id="canvas-container">
-        <canvas id="canvas" width="400" height="300"></canvas>
+        <canvas id="canvas" width="600" height="400"></canvas>
     </div>
 
     <script>
@@ -21,15 +22,28 @@
             backgroundColor: 'white'
         });
 
-        // Lisätään ympyrä
-        function lisaaYmpyra() {
-            var ympyra = new fabric.Circle({
-                radius: 30,
-                fill: 'red',
-                left: 100,
+        // Lisätään hahmo (pää + vartalo)
+        function lisaaHahmo() {
+            // Pää (ympyrä)
+            var paa = new fabric.Circle({
+                radius: 25,
+                fill: 'blue',
+                left: 150,
                 top: 100
             });
-            canvas.add(ympyra);
+            canvas.add(paa);
+
+            // Vartalo (suorakulmio)
+            var vartalo = new fabric.Rect({
+                width: 60,
+                height: 100,
+                fill: 'blue',
+                left: 125,
+                top: 125,
+                rx: 10,
+                ry: 10
+            });
+            canvas.add(vartalo);
         }
     </script>
 </body>
