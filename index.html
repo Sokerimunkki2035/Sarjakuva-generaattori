@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Sarjakuva: Hahmo</title>
+    <title>Sarjakuva: Hahmo (ryhmitelty)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/3.6.2/fabric.min.js"></script>
     <style>
         body { margin: 20px; }
@@ -22,29 +22,35 @@
             backgroundColor: 'white'
         });
 
-        // Lisätään hahmo (pää + vartalo)
+        // Lisätään hahmo (pää + vartalo, ryhmitelty)
         function lisaaHahmo() {
             // Pää (ympyrä)
             var paa = new fabric.Circle({
                 radius: 25,
                 fill: 'blue',
-                left: 150,
-                top: 100
+                top: -25,
+                left: 20
             });
-            canvas.add(paa);
 
             // Vartalo (suorakulmio)
             var vartalo = new fabric.Rect({
                 width: 60,
                 height: 100,
                 fill: 'blue',
-                left: 125,
-                top: 125,
+                top: 0,
+                left: 0,
                 rx: 10,
                 ry: 10
             });
-            canvas.add(vartalo);
+
+            // Ryhmitellään pää ja vartalo
+            var hahmo = new fabric.Group([paa, vartalo], {
+                left: 100,
+                top: 100
+            });
+
+            canvas.add(hahmo);
         }
     </script>
 </body>
-</html>
+</html> 
