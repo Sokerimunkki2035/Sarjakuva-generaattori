@@ -1,56 +1,158 @@
 <!DOCTYPE html>
-<html>
+<html lang="fi">
 <head>
-    <title>Sarjakuva: Hahmo (ryhmitelty)</title>
+    <meta charset="utf-8">
+    <title>Sarjakuva-editori</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/3.6.2/fabric.min.js"></script>
     <style>
-        body { margin: 20px; }
-        #canvas-container { border: 1px solid black; }
-        canvas { border: 1px solid gray; }
-        button { padding: 10px 15px; margin: 5px; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        select, button {
+            padding: 10px;
+            margin: 5px;
+        }
+        #canvas-container {
+            border: 1px solid black;
+        }
+        canvas {
+            border: 1px solid gray;
+        }
     </style>
 </head>
 <body>
-    <button onclick="lisaaHahmo()">Lisää hahmo</button>
+    <div class="controls">
+        <div>
+            <label>Sukupuoli:</label>
+            <select id="gender">
+                <option value="#3498db">Mies / Poika</option>
+                <option value="#e91e63">Nainen / Tyttö</option>
+            </select>
+        </div>
+        <div>
+            <label>Vartalo:</label>
+            <select id="bodyType">
+                <option value="40">Hoikka</option>
+                <option value="70">Vatsakas</option>
+                <option value="100">Pullea</option>
+            </select>
+        </div>
+        <div>
+            <label>Pituus:</label>
+            <select id="heightScale">
+                <option value="1.2">Pitkä (Aikuinen)</option>
+                <option value="0.7">Lyhyt (Lapsi)</option>
+            </select>
+        </div>
+    </div>
+    <div class="controls">
+        <button onclick="lisaaHahmo()">Lisää hahmo</button>
+        <button onclick="lisaaTeksti()">Lisää teksti</button>
+        <button onclick="lisaaSeina()">Lisää seinä</button>
+        <button onclick="poistaValittu()">Poista valittu</button>
+        <button onclick="tallennaKuva()">Tallenna kuva</button>
+    </div>
     <div id="canvas-container">
-        <canvas id="canvas" width="600" height="400"></canvas>
+        <canvas id="canvas" width="800" height="500"></canvas>
     </div>
 
     <script>
-        // Luodaan kanvaasi
         var canvas = new fabric.Canvas('canvas', {
             backgroundColor: 'white'
         });
 
-        // Lisätään hahmo (pää + vartalo, ryhmitelty)
+        // Lisää hahmo
         function lisaaHahmo() {
-            // Pää (ympyrä)
+            var vari = document.getElementById('gender').value;
+            var leveys = parseInt(document.getElementById('bodyType').value);
+            var pituusKerroin = parseFloat(document.getElementById('heightScale').value);
+            var perusKorkeus = 100;
+            var hahmonKorkeus = perusKorkeus * pituusKerroin;
+
             var paa = new fabric.Circle({
                 radius: 25,
-                fill: 'blue',
+                fill: vari,
                 top: -25,
-                left: 20
+                left: leveys / 2 - 25
             });
 
-            // Vartalo (suorakulmio)
             var vartalo = new fabric.Rect({
-                width: 60,
-                height: 100,
-                fill: 'blue',
+                width: leveys,
+                height: hahmonKorkeus,
+                fill: vari,
                 top: 0,
                 left: 0,
-                rx: 10,
-                ry: 10
+                rx: 15,
+                ry: 15
             });
 
-            // Ryhmitellään pää ja vartalo
             var hahmo = new fabric.Group([paa, vartalo], {
                 left: 100,
                 top: 100
             });
 
             canvas.add(hahmo);
+            canvas.setActiveObject(hahmo);
+            canvas.renderAll();
+        }
+
+        // Lisää teksti
+        function lisaaTeksti() {
+            var teksti = new fabric.IText('Kirjoita tähän...', {
+                left: 50,
+                top: 50,
+                fontSize: 20,
+                fontFamily: 'Arial'
+            });
+            canvas.add(teksti);
+            canvas.setActiveObject(teksti);
+            canvas.renderAll();
+        }
+
+        // Lisää seinä
+        function lisaaSeina() {
+            var seina = new fabric.Rect({
+                left: 50,
+                top: 50,
+                fill: '#7f8c8d',
+                width: 15,
+                height: 200
+            });
+            canvas.add(seina);
+            canvas.renderAll();
+        }
+
+        // Poista valittu objekti
+        function poistaValittu() {
+            var aktiivinen = canvas.getActiveObject();
+            if (aktiivinen) {
+                canvas.remove(aktiivinen);
+                canvas.renderAll();
+            }
+        }
+
+        // Tallenna kuva
+        function tallennaKuva() {
+            var dataURL = canvas.toDataURL({
+                format: 'png',
+                quality: 1
+            });
+            var link = document.createElement('a');
+            link.download = 'sarjakuva.png';
+            link.href = dataURL;
+            link.click();
         }
     </script>
 </body>
-</html> 
+</html>
