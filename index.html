@@ -1,48 +1,65 @@
 <!DOCTYPE html>
-<html>
+<html lang="fi">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sarjakuva-editori Korjattu</title>
-    <script src="https://unpkg.com/fabric@5.3.0/dist/fabric.min.js"></script>
+    <title>Sarjakuva-editori</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <style>
-        body { font-family: sans-serif; background: #f0f0f0; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; touch-action: manipulation; }
-        .controls { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); margin-bottom: 10px; width: 95%; max-width: 600px; }
-        .row { margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-        button { padding: 10px; border: 1px solid #ccc; background: #eee; cursor: pointer; border-radius: 6px; font-size: 14px; }
-        select { padding: 10px; border-radius: 6px; border: 1px solid #ccc; background: white; font-size: 14px; }
-        #canvas-container { border: 2px solid #333; background: #fff; line-height: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f4f9; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; touch-action: manipulation; }
+        .controls { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 15px; width: 95%; max-width: 700px; }
+        .row { margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; }
+        
+        button { padding: 12px 16px; border: none; background: #e0e0e0; cursor: pointer; border-radius: 8px; font-weight: 600; transition: 0.2s; }
+        button:active { transform: scale(0.95); }
+        
+        select { padding: 10px; border-radius: 8px; border: 1px solid #ccc; background: #fff; font-size: 14px; min-width: 120px; }
+        
+        #canvas-container { border: 3px solid #333; background: #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
         canvas { max-width: 100%; height: auto !important; }
-        .delete-btn { background: #ff4444; color: white; }
-        .add-btn { background: #4CAF50; color: white; font-weight: bold; }
+        
+        .btn-add { background: #2ecc71; color: white; }
+        .btn-delete { background: #e74c3c; color: white; }
+        .btn-save { background: #3498db; color: white; }
+        
+        label { font-size: 12px; color: #666; font-weight: bold; text-transform: uppercase; }
+        .input-group { display: flex; flex-direction: column; }
     </style>
 </head>
 <body>
 
     <div class="controls">
         <div class="row">
-            <strong>Hahmo:</strong>
-            <select id="gender">
-                <option value="#3498db">Mies / Poika (Sininen)</option>
-                <option value="#e91e63">Nainen / Tyttö (Punainen)</option>
-            </select>
-            <select id="bodyType">
-                <option value="40">Hoikka</option>
-                <option value="60">Vatsakas</option>
-                <option value="80">Pullea</option>
-            </select>
-            <select id="height">
-                <option value="100">Pitkä / Aikuinen</option>
-                <option value="50">Lyhyt / Lapsi</option>
-            </select>
+            <div class="input-group">
+                <label>Sukupuoli</label>
+                <select id="gender">
+                    <option value="#3498db">Mies / Poika</option>
+                    <option value="#e91e63">Nainen / Tyttö</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Vartalo</label>
+                <select id="bodyType">
+                    <option value="40">Hoikka</option>
+                    <option value="70">Vatsakas</option>
+                    <option value="100">Pullea</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Pituus</label>
+                <select id="heightScale">
+                    <option value="1.2">Pitkä (Aikuinen)</option>
+                    <option value="0.7">Lyhyt (Lapsi)</option>
+                </select>
+            </div>
         </div>
         
         <div class="row">
-            <button onclick="lisaaHahmo()" class="add-btn">Lisää Hahmo</button>
+            <button onclick="lisaaHahmo()" class="btn-add">Luo Hahmo</button>
             <button onclick="lisaaTeksti()">Lisää Teksti</button>
             <button onclick="lisaaSeina()">Lisää Seinä</button>
-            <button onclick="poistaValittu()" class="delete-btn">Poista</button>
-            <button onclick="tallennaKuva()">Tallenna PNG</button>
+            <button onclick="poistaValittu()" class="btn-delete">Poista</button>
+            <button onclick="tallennaKuva()" class="btn-save">Tallenna PNG</button>
         </div>
     </div>
 
@@ -51,78 +68,95 @@
     </div>
 
     <script>
-        // Alustetaan canvas heti kun sivu on latautunut
         var canvas;
+
+        // Alustetaan sivu
         window.onload = function() {
             canvas = new fabric.Canvas('sarjisCanvas', {
-                backgroundColor: '#ffffff',
-                isDrawingMode: false
+                backgroundColor: '#ffffff'
             });
-            // Pakotetaan renderöinti
             canvas.renderAll();
-            console.log("Canvas alustettu");
         };
 
         function lisaaHahmo() {
             var vari = document.getElementById('gender').value;
             var leveys = parseInt(document.getElementById('bodyType').value);
-            var korkeus = parseInt(document.getElementById('height').value);
+            var pituusKerroin = parseFloat(document.getElementById('heightScale').value);
+            
+            var perusKorkeus = 100;
+            var hahmonKorkeus = perusKorkeus * pituusKerroin;
 
-            // Luodaan vartalo suorakulmiona
-            var vartalo = new fabric.Rect({
-                left: 100,
-                top: 150,
-                fill: vari,
-                width: leveys,
-                height: korkeus,
-                rx: 10, // Pyöristetyt kulmat
-                ry: 10
-            });
-
-            // Luodaan pää pallona
+            // Pää
             var paa = new fabric.Circle({
-                left: 100 + (leveys/2) - 25,
-                top: 150 - 45,
+                radius: 25,
                 fill: vari,
-                radius: 25
+                top: 0,
+                left: (leveys / 2) - 25
             });
 
-            // Lisätään molemmat kankaalle
-            canvas.add(vartalo);
-            canvas.add(paa);
-            canvas.setActiveObject(vartalo);
+            // Vartalo
+            var vartalo = new fabric.Rect({
+                width: leveys,
+                height: hahmonKorkeus,
+                fill: vari,
+                top: 45, // Hieman pään alle
+                left: 0,
+                rx: 15,
+                ry: 15
+            });
+
+            // Ryhmitellään osat, jotta ne liikkuvat yhtenä hahmona
+            var hahmo = new fabric.Group([vartalo, paa], {
+                left: 100,
+                top: 100
+            });
+
+            canvas.add(hahmo);
+            canvas.setActiveObject(hahmo);
             canvas.renderAll();
         }
 
         function lisaaTeksti() {
-            var teksti = new fabric.IText('Kirjoita...', {
-                left: 200,
-                top: 100,
-                fontSize: 25,
-                fontFamily: 'Arial'
+            var teksti = new fabric.IText('Kirjoita tähän...', {
+                left: 150,
+                top: 150,
+                fontSize: 28,
+                fontFamily: 'Arial',
+                backgroundColor: 'rgba(255,255,255,0.8)'
             });
             canvas.add(teksti);
             canvas.setActiveObject(teksti);
+            canvas.renderAll();
         }
 
         function lisaaSeina() {
             var seina = new fabric.Rect({
-                left: 50, top: 50, fill: '#888', width: 20, height: 200
+                left: 50, 
+                top: 50, 
+                fill: '#7f8c8d', 
+                width: 15, 
+                height: 250
             });
             canvas.add(seina);
-        }
-
-        function poistaValittu() {
-            var activeObjects = canvas.getActiveObjects();
-            canvas.discardActiveObject();
-            if (activeObjects.length) {
-                canvas.remove.apply(canvas, activeObjects);
-            }
             canvas.renderAll();
         }
 
+        function poistaValittu() {
+            var aktiiviset = canvas.getActiveObjects();
+            if (aktiiviset.length > 0) {
+                aktiiviset.forEach(function(obj) {
+                    canvas.remove(obj);
+                });
+                canvas.discardActiveObject();
+                canvas.renderAll();
+            }
+        }
+
         function tallennaKuva() {
-            var dataURL = canvas.toDataURL({ format: 'png' });
+            var dataURL = canvas.toDataURL({
+                format: 'png',
+                quality: 1
+            });
             var link = document.createElement('a');
             link.download = 'sarjakuva.png';
             link.href = dataURL;
@@ -130,5 +164,4 @@
         }
     </script>
 </body>
-</html>
- 
+</html> 
