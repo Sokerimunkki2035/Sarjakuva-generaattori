@@ -2,7 +2,7 @@
 <html lang="fi">
 <head>
     <meta charset="utf-8">
-    <title>Sarjakuva: Ihmishahmot</title>
+    <title>Sarjakuva: Puhekupla + Teksti</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/3.6.2/fabric.min.js"></script>
     <style>
         body {
@@ -60,7 +60,6 @@
         <button onclick="lisaaHahmo()">Lisää hahmo</button>
         <button onclick="lisaaPuhekupla()">Lisää puhekupla</button>
         <button onclick="lisaaTeksti()">Lisää teksti</button>
-        <button onclick="lisaaSeina()">Lisää seinä</button>
         <button onclick="poistaValittu()">Poista valittu</button>
         <button onclick="tallennaKuva()">Tallenna kuva</button>
     </div>
@@ -73,7 +72,7 @@
             backgroundColor: 'white'
         });
 
-        // Lisää hahmo (ihmishahmo)
+        // Lisää hahmo (sarjakuvamainen)
         function lisaaHahmo() {
             var vari = document.getElementById('gender').value;
             var leveys = parseInt(document.getElementById('bodyType').value);
@@ -81,7 +80,7 @@
             var perusKorkeus = 120;
             var hahmonKorkeus = perusKorkeus * pituusKerroin;
 
-            // Pää (pyöreä, kasvoilla piirteet)
+            // Pää
             var paa = new fabric.Circle({
                 radius: 30,
                 fill: vari,
@@ -89,7 +88,7 @@
                 left: leveys / 2 - 30
             });
 
-            // Silmät (2 ympyrää)
+            // Silmät
             var silma1 = new fabric.Circle({
                 radius: 5,
                 fill: 'black',
@@ -104,14 +103,16 @@
                 left: leveys / 2 + 10
             });
 
-            // Suu (viiva)
-            var suu = new fabric.Line([leveys / 2 - 15, -20, leveys / 2 + 15, -20], {
+            // Suu
+            var suu = new fabric.Path('M -10 0 Q 0 10 10 0', {
+                fill: '',
                 stroke: 'black',
                 strokeWidth: 2,
-                top: -25
+                top: -15,
+                left: leveys / 2 - 10
             });
 
-            // Vartalo (yksinkertainen, pyöristetty)
+            // Vartalo
             var vartalo = new fabric.Rect({
                 width: leveys,
                 height: hahmonKorkeus,
@@ -122,8 +123,23 @@
                 ry: 15
             });
 
+            // Kädet
+            var kasi1 = new fabric.Line([0, 30, -30, 10], {
+                stroke: vari,
+                strokeWidth: 10,
+                top: 10,
+                left: 0
+            });
+
+            var kasi2 = new fabric.Line([leveys, 30, leveys + 30, 10], {
+                stroke: vari,
+                strokeWidth: 10,
+                top: 10,
+                left: 0
+            });
+
             // Ryhmitellään kaikki osat
-            var hahmo = new fabric.Group([paa, silma1, silma2, suu, vartalo], {
+            var hahmo = new fabric.Group([paa, silma1, silma2, suu, vartalo, kasi1, kasi2], {
                 left: 100,
                 top: 100
             });
@@ -136,44 +152,34 @@
         // Lisää puhekupla
         function lisaaPuhekupla() {
             var puhekupla = new fabric.Path(
-                'M 50 0 Q 100 -50 150 0 L 150 50 Q 100 100 50 50 Z',
+                'M 0 0 Q 100 -50 200 0 L 200 80 Q 100 130 0 80 Z',
                 {
                     fill: 'white',
                     stroke: 'black',
                     strokeWidth: 2,
-                    left: 200,
+                    left: 250,
                     top: 50
                 }
             );
 
             canvas.add(puhekupla);
+            canvas.setActiveObject(puhekupla);
             canvas.renderAll();
         }
 
-        // Lisää teksti
+        // Lisää teksti (puhekuplaan)
         function lisaaTeksti() {
-            var teksti = new fabric.IText('EN MÄ PÄÄSEKÄN', {
-                left: 200,
-                top: 50,
+            var teksti = new fabric.IText('Kirjoita tähän...', {
+                left: 270,
+                top: 70,
                 fontSize: 16,
                 fontFamily: 'Arial',
-                fill: 'black'
+                fill: 'black',
+                width: 150,
+                textAlign: 'center'
             });
             canvas.add(teksti);
             canvas.setActiveObject(teksti);
-            canvas.renderAll();
-        }
-
-        // Lisää seinä
-        function lisaaSeina() {
-            var seina = new fabric.Rect({
-                left: 50,
-                top: 50,
-                fill: '#7f8c8d',
-                width: 15,
-                height: 200
-            });
-            canvas.add(seina);
             canvas.renderAll();
         }
 
@@ -199,4 +205,4 @@
         }
     </script>
 </body>
-</html>
+</html> 
