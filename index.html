@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Minun Sarjakuvatyökalu</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f0f0; }
+        canvas { border: 2px solid #333; background: #fff; margin-top: 10px; }
+        .controls { margin: 20px; padding: 10px; background: #ddd; border-radius: 8px; }
+        button { padding: 8px 12px; cursor: pointer; margin: 2px; }
+    </style>
+</head>
+<body>
+
+    <h2>Sarjakuva-editori</h2>
+    
+    <div class="controls">
+        <button onclick="lisaaSeina()">Lisää Seinä (Neliö)</button>
+        <button onclick="lisaaHahmo()">Lisää Hahmo (Ympyrä)</button>
+        <button onclick="lisaaTeksti()">Lisää Teksti/Puhekupla</button>
+        <button onclick="poistaValittu()" style="background: #ffcccc;">Poista Valittu</button>
+        <button onclick="tallennaKuva()">Tallenna kuvana</button>
+    </div>
+
+    <canvas id="sarjisCanvas" width="800" height="500"></canvas>
+
+    <script>
+        const canvas = new fabric.Canvas('sarjisCanvas');
+
+        function lisaaSeina() {
+            const rect = new fabric.Rect({
+                left: 100, top: 100, fill: '#8B4513', width: 200, height: 150
+            });
+            canvas.add(rect);
+        }
+
+        function lisaaHahmo() {
+            const circle = new fabric.Circle({
+                radius: 40, fill: '#3498db', left: 200, top: 200
+            });
+            canvas.add(circle);
+        }
+
+        function lisaaTeksti() {
+            const text = new fabric.IText('Kirjoita tähän...', {
+                left: 150, top: 50, fontFamily: 'Comic Sans MS', fontSize: 20
+            });
+            canvas.add(text);
+        }
+
+        function poistaValittu() {
+            const activeObjects = canvas.getActiveObjects();
+            canvas.discardActiveObject();
+            if (activeObjects.length) {
+                canvas.remove(...activeObjects);
+            }
+        }
+
+        function tallennaKuva() {
+            const dataURL = canvas.toDataURL({ format: 'png' });
+            const link = document.createElement('a');
+            link.download = 'sarjakuva.png';
+            link.href = dataURL;
+            link.click();
+        }
+    </script>
+</body>
+</html> 
