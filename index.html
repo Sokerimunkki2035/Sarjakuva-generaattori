@@ -1,18 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sarjakuva-editori Pro</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sarjakuva-editori Korjattu</title>
+    <script src="https://unpkg.com/fabric@5.3.0/dist/fabric.min.js"></script>
     <style>
-        body { font-family: sans-serif; background: #f0f0f0; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
-        .controls { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); margin-bottom: 10px; width: 100%; max-width: 800px; }
-        .row { margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 5px; }
-        button { padding: 8px 12px; border: 1px solid #ccc; background: #eee; cursor: pointer; border-radius: 4px; }
-        button:active { background: #ddd; }
-        select { padding: 8px; border-radius: 4px; }
-        canvas { border: 2px solid #333; background: #fff; max-width: 100%; height: auto !important; }
-        .delete-btn { background: #ff4444; color: white; border: none; }
+        body { font-family: sans-serif; background: #f0f0f0; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; touch-action: manipulation; }
+        .controls { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); margin-bottom: 10px; width: 95%; max-width: 600px; }
+        .row { margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        button { padding: 10px; border: 1px solid #ccc; background: #eee; cursor: pointer; border-radius: 6px; font-size: 14px; }
+        select { padding: 10px; border-radius: 6px; border: 1px solid #ccc; background: white; font-size: 14px; }
+        #canvas-container { border: 2px solid #333; background: #fff; line-height: 0; }
+        canvas { max-width: 100%; height: auto !important; }
+        .delete-btn { background: #ff4444; color: white; }
+        .add-btn { background: #4CAF50; color: white; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -21,92 +23,112 @@
         <div class="row">
             <strong>Hahmo:</strong>
             <select id="gender">
-                <option value="blue">Mies / Poika</option>
-                <option value="pink">Nainen / Tyttö</option>
+                <option value="#3498db">Mies / Poika (Sininen)</option>
+                <option value="#e91e63">Nainen / Tyttö (Punainen)</option>
             </select>
             <select id="bodyType">
-                <option value="0.5">Hoikka</option>
-                <option value="0.8">Vatsakas</option>
-                <option value="1.2">Pullea</option>
+                <option value="40">Hoikka</option>
+                <option value="60">Vatsakas</option>
+                <option value="80">Pullea</option>
             </select>
             <select id="height">
-                <option value="1.5">Pitkä / Aikuinen</option>
-                <option value="0.8">Lyhyt / Lapsi</option>
+                <option value="100">Pitkä / Aikuinen</option>
+                <option value="50">Lyhyt / Lapsi</option>
             </select>
-            <button onclick="lisaaHahmo()" style="background: #4CAF50; color: white;">Lisää Hahmo</button>
         </div>
         
         <div class="row">
-            <button onclick="lisaaTeksti()">Lisää Puhekupla/Teksti</button>
+            <button onclick="lisaaHahmo()" class="add-btn">Lisää Hahmo</button>
+            <button onclick="lisaaTeksti()">Lisää Teksti</button>
             <button onclick="lisaaSeina()">Lisää Seinä</button>
-            <button onclick="poistaValittu()" class="delete-btn">Poista valittu</button>
+            <button onclick="poistaValittu()" class="delete-btn">Poista</button>
             <button onclick="tallennaKuva()">Tallenna PNG</button>
         </div>
     </div>
 
-    <canvas id="sarjisCanvas" width="800" height="500"></canvas>
+    <div id="canvas-container">
+        <canvas id="sarjisCanvas" width="800" height="500"></canvas>
+    </div>
 
     <script>
-        // Alustetaan canvas ja sallitaan kosketuslaitteet
-        const canvas = new fabric.Canvas('sarjisCanvas', {
-            allowTouchScrolling: true,
-            stopContextMenu: true
-        });
+        // Alustetaan canvas heti kun sivu on latautunut
+        var canvas;
+        window.onload = function() {
+            canvas = new fabric.Canvas('sarjisCanvas', {
+                backgroundColor: '#ffffff',
+                isDrawingMode: false
+            });
+            // Pakotetaan renderöinti
+            canvas.renderAll();
+            console.log("Canvas alustettu");
+        };
 
         function lisaaHahmo() {
-            const gender = document.getElementById('gender').value;
-            const bodyWidthScale = parseFloat(document.getElementById('bodyType').value);
-            const heightScale = parseFloat(document.getElementById('height').value);
+            var vari = document.getElementById('gender').value;
+            var leveys = parseInt(document.getElementById('bodyType').value);
+            var korkeus = parseInt(document.getElementById('height').value);
 
-            // Luodaan yksinkertainen hahmo palloista ja viivoista (ryhmänä)
-            const paa = new fabric.Circle({ radius: 20, fill: gender, top: 0, left: 20 });
-            const vartalo = new fabric.Rect({ 
-                width: 40 * bodyWidthScale, 
-                height: 60 * heightScale, 
-                fill: gender, 
-                top: 35, 
-                left: 40 - (20 * bodyWidthScale) 
-            });
-
-            const hahmo = new fabric.Group([paa, vartalo], {
+            // Luodaan vartalo suorakulmiona
+            var vartalo = new fabric.Rect({
                 left: 100,
-                top: 100
+                top: 150,
+                fill: vari,
+                width: leveys,
+                height: korkeus,
+                rx: 10, // Pyöristetyt kulmat
+                ry: 10
             });
 
-            canvas.add(hahmo);
-            canvas.setActiveObject(hahmo);
+            // Luodaan pää pallona
+            var paa = new fabric.Circle({
+                left: 100 + (leveys/2) - 25,
+                top: 150 - 45,
+                fill: vari,
+                radius: 25
+            });
+
+            // Lisätään molemmat kankaalle
+            canvas.add(vartalo);
+            canvas.add(paa);
+            canvas.setActiveObject(vartalo);
+            canvas.renderAll();
         }
 
         function lisaaTeksti() {
-            const teksti = new fabric.IText('Kirjoita tähän...', {
-                left: 150,
-                top: 50,
-                fontFamily: 'Arial',
-                fontSize: 24,
-                backgroundColor: 'white'
+            var teksti = new fabric.IText('Kirjoita...', {
+                left: 200,
+                top: 100,
+                fontSize: 25,
+                fontFamily: 'Arial'
             });
             canvas.add(teksti);
+            canvas.setActiveObject(teksti);
         }
 
         function lisaaSeina() {
-            const seina = new fabric.Rect({
-                left: 50, top: 50, fill: '#ccc', width: 100, height: 200, stroke: '#333'
+            var seina = new fabric.Rect({
+                left: 50, top: 50, fill: '#888', width: 20, height: 200
             });
             canvas.add(seina);
         }
 
         function poistaValittu() {
-            canvas.getActiveObjects().forEach(obj => canvas.remove(obj));
-            canvas.discardActiveObject().renderAll();
+            var activeObjects = canvas.getActiveObjects();
+            canvas.discardActiveObject();
+            if (activeObjects.length) {
+                canvas.remove.apply(canvas, activeObjects);
+            }
+            canvas.renderAll();
         }
 
         function tallennaKuva() {
-            const dataURL = canvas.toDataURL({ format: 'png', quality: 1 });
-            const link = document.createElement('a');
+            var dataURL = canvas.toDataURL({ format: 'png' });
+            var link = document.createElement('a');
             link.download = 'sarjakuva.png';
             link.href = dataURL;
             link.click();
         }
     </script>
 </body>
-</html> 
+</html>
+ 
