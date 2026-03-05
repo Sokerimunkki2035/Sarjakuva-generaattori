@@ -2,7 +2,7 @@
 <html lang="fi">
 <head>
     <meta charset="utf-8">
-    <title>Sarjakuva-editori</title>
+    <title>Sarjakuva: Ihmishahmot</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/3.6.2/fabric.min.js"></script>
     <style>
         body {
@@ -58,6 +58,7 @@
     </div>
     <div class="controls">
         <button onclick="lisaaHahmo()">Lisää hahmo</button>
+        <button onclick="lisaaPuhekupla()">Lisää puhekupla</button>
         <button onclick="lisaaTeksti()">Lisää teksti</button>
         <button onclick="lisaaSeina()">Lisää seinä</button>
         <button onclick="poistaValittu()">Poista valittu</button>
@@ -72,21 +73,45 @@
             backgroundColor: 'white'
         });
 
-        // Lisää hahmo
+        // Lisää hahmo (ihmishahmo)
         function lisaaHahmo() {
             var vari = document.getElementById('gender').value;
             var leveys = parseInt(document.getElementById('bodyType').value);
             var pituusKerroin = parseFloat(document.getElementById('heightScale').value);
-            var perusKorkeus = 100;
+            var perusKorkeus = 120;
             var hahmonKorkeus = perusKorkeus * pituusKerroin;
 
+            // Pää (pyöreä, kasvoilla piirteet)
             var paa = new fabric.Circle({
-                radius: 25,
+                radius: 30,
                 fill: vari,
-                top: -25,
-                left: leveys / 2 - 25
+                top: -30,
+                left: leveys / 2 - 30
             });
 
+            // Silmät (2 ympyrää)
+            var silma1 = new fabric.Circle({
+                radius: 5,
+                fill: 'black',
+                top: -38,
+                left: leveys / 2 - 20
+            });
+
+            var silma2 = new fabric.Circle({
+                radius: 5,
+                fill: 'black',
+                top: -38,
+                left: leveys / 2 + 10
+            });
+
+            // Suu (viiva)
+            var suu = new fabric.Line([leveys / 2 - 15, -20, leveys / 2 + 15, -20], {
+                stroke: 'black',
+                strokeWidth: 2,
+                top: -25
+            });
+
+            // Vartalo (yksinkertainen, pyöristetty)
             var vartalo = new fabric.Rect({
                 width: leveys,
                 height: hahmonKorkeus,
@@ -97,7 +122,8 @@
                 ry: 15
             });
 
-            var hahmo = new fabric.Group([paa, vartalo], {
+            // Ryhmitellään kaikki osat
+            var hahmo = new fabric.Group([paa, silma1, silma2, suu, vartalo], {
                 left: 100,
                 top: 100
             });
@@ -107,13 +133,31 @@
             canvas.renderAll();
         }
 
+        // Lisää puhekupla
+        function lisaaPuhekupla() {
+            var puhekupla = new fabric.Path(
+                'M 50 0 Q 100 -50 150 0 L 150 50 Q 100 100 50 50 Z',
+                {
+                    fill: 'white',
+                    stroke: 'black',
+                    strokeWidth: 2,
+                    left: 200,
+                    top: 50
+                }
+            );
+
+            canvas.add(puhekupla);
+            canvas.renderAll();
+        }
+
         // Lisää teksti
         function lisaaTeksti() {
-            var teksti = new fabric.IText('Kirjoita tähän...', {
-                left: 50,
+            var teksti = new fabric.IText('EN MÄ PÄÄSEKÄN', {
+                left: 200,
                 top: 50,
-                fontSize: 20,
-                fontFamily: 'Arial'
+                fontSize: 16,
+                fontFamily: 'Arial',
+                fill: 'black'
             });
             canvas.add(teksti);
             canvas.setActiveObject(teksti);
