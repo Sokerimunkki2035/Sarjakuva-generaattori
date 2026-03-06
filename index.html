@@ -8,24 +8,38 @@
     <style>
         body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f0f0; margin: 0; padding: 10px; }
         .controls { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 10px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 800px; }
-        #canvas-container { border: 2px solid #333; background: white; line-height: 0; max-width: 100%; }
+        #canvas-container { border: 2px solid #333; background: white; line-height: 0; max-width: 100%; overflow: hidden; }
         button, select { padding: 12px; cursor: pointer; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; }
         button { background: #007bff; color: white; border: none; font-weight: bold; }
         .delete-btn { background: #dc3545; }
+        /* Tallenna-napin tyyli */
+        .save-btn { background: #28a745; color: white; }
     </style>
 </head>
 <body>
 
     <div class="controls">
         <select id="characterSelect">
-            <option value="Momsad.png|koko">Äiti (Koko kuva)</option>
-            <option value="tyttojaisa.png|koko">Isä ja tyttö</option>
-            <option value="Boyseveral.png|vasen">Poika 1 (Vasen)</option>
-            <option value="Boyseveral.png|oikea">Poika 2 (Oikea)</option>
+            <optgroup label="Äiti (Momsad.png)">
+                <option value="Momsad.png|koko">Äiti (Koko kuva)</option>
+            </optgroup>
+            <optgroup label="Isä ja tyttö (tyttojaisa.png)">
+                <option value="tyttojaisa.png|koko">Molemmat (Isä ja Tyttö)</option>
+                <option value="tyttojaisa.png|vasen">Vain Tyttö (Vasen)</option>
+                <option value="tyttojaisa.png|oikea">Vain Isä (Oikea)</option>
+            </optgroup>
+            <optgroup label="Pojat (Boyseveral.png)">
+                <option value="Boyseveral.png|koko">Kaikki pojat</option>
+                <option value="Boyseveral.png|vasen">Poika 1 (Vasen puoli)</option>
+                <option value="Boyseveral.png|oikea">Poika 2 (Oikea puoli)</option>
+                <option value="Boyseveral.png|yla">Poika ylhäällä</option>
+                <option value="Boyseveral.png|ala">Poika alhaalla</option>
+            </optgroup>
         </select>
         <button onclick="lisaaHahmo()">Lisää hahmo</button>
         <button onclick="lisaaTeksti()">Lisää teksti</button>
-        <button class="delete-btn" onclick="poistaValittu()">Poista valittu</button>
+        <button class="delete-btn" onclick="poistaValittu()">Poista</button>
+        <button class="save-btn" onclick="tallennaKuva()">Tallenna sarjis</button>
     </div>
 
     <div id="canvas-container">
@@ -39,36 +53,24 @@
             var rawValue = document.getElementById('characterSelect').value;
             var parts = rawValue.split('|');
             var tiedosto = parts[0];
-            var rajat = parts[1];
+            var tyyppi = parts[1];
 
             fabric.Image.fromURL(tiedosto, function(img) {
-                var config = {
-                    left: 100,
-                    top: 100,
-                    scaleX: 0.6,
-                    scaleY: 0.6
-                };
+                var w = img.width, h = img.height;
+                var cx = 0, cy = 0, cw = w, ch = h;
 
-                // JOS valittu rajaus "vasen" (esim. Boyseveral.png vasen puoli)
-                if (rajat === 'vasen') {
-                    img.set({
-                        width: img.width / 2, // Näytä vain puolet leveydestä
-                        cropX: 0,             // Aloita vasemmasta reunasta
-                        ...config
-                    });
-                } 
-                // JOS valittu rajaus "oikea"
-                else if (rajat === 'oikea') {
-                    img.set({
-                        width: img.width / 2, // Näytä vain puolet leveydestä
-                        cropX: img.width / 2, // Aloita puolivälistä
-                        ...config
-                    });
-                }
-                else {
-                    img.set(config);
-                }
+                if (tyyppi === 'vasen') { cw = w / 2; } 
+                else if (tyyppi === 'oikea') { cx = w / 2; cw = w / 2; } 
+                else if (tyyppi === 'yla') { ch = h / 2; } 
+                else if (tyyppi === 'ala') { cy = h / 2; ch = h / 2; }
 
+                img.set({
+                    left: 50, top: 50, width: cw, height: ch,
+                    cropX: cx, cropY: cy, scaleX: 0.6, scaleY: 0.6,
+                    cornerColor: 'blue', transparentCorners: false, cornerSize: 20
+                });
+
+                img.setControlsVisibility({ mt: false, mb: false, ml: false, mr: false });
                 canvas.add(img);
                 canvas.setActiveObject(img);
                 canvas.renderAll();
@@ -76,28 +78,45 @@
         }
 
         function lisaaTeksti() {
-            var teksti = new fabric.IText('Kirjoita tähän...', {
-                left: 150, top: 150, fontSize: 28, fontFamily: 'Arial'
+            var teksti = new fabric.IText('Kirjoita tähän', {
+                left: 100, top: 100, fontSize: 30, fontFamily: 'Arial'
             });
             canvas.add(teksti);
             canvas.setActiveObject(teksti);
-            teksti.enterEditing();
-            if(teksti.hiddenTextarea) teksti.hiddenTextarea.focus();
+            setTimeout(() => {
+                teksti.enterEditing();
+                if(teksti.hiddenTextarea) teksti.hiddenTextarea.focus();
+            }, 100);
             canvas.renderAll();
         }
 
         function poistaValittu() {
-            canvas.remove(canvas.getActiveObject());
+            if(canvas.getActiveObject()) canvas.remove(canvas.getActiveObject());
         }
 
-        // Tärkeä korjaus: Estetään litistyminen hiirellä vedettäessä
-        canvas.on('object:scaling', function(e) {
-            var obj = e.target;
-            if (obj.type === 'image') {
-                // Pidetään mittasuhteet lukittuna (ei litistymistä)
-                obj.setControlsVisibility({
-                    mt: false, mb: false, ml: false, mr: false // Poistetaan sivu-kahvat
-                });
+        // TALLENNUSFUNKTIO
+        function tallennaKuva() {
+            // Poistetaan valintakehykset kuvasta ennen tallennusta
+            canvas.discardActiveObject();
+            canvas.renderAll();
+
+            // Luodaan latauslinkki
+            var dataURL = canvas.toDataURL({
+                format: 'png',
+                quality: 1.0
+            });
+            
+            var link = document.createElement('a');
+            link.download = 'minun_sarjakuvani.png';
+            link.href = dataURL;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        canvas.on('mouse:down', function(e) {
+            if (e.target && e.target.type === 'i-text') {
+                e.target.enterEditing();
             }
         });
     </script>
