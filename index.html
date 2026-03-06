@@ -8,25 +8,24 @@
     <style>
         body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f0f0; margin: 0; padding: 10px; }
         .controls { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 10px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 800px; }
-        #canvas-container { border: 2px solid #333; background: white; line-height: 0; max-width: 100%; overflow: auto; }
-        button, select { padding: 10px; cursor: pointer; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; }
+        #canvas-container { border: 2px solid #333; background: white; line-height: 0; max-width: 100%; }
+        button, select { padding: 12px; cursor: pointer; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; }
         button { background: #007bff; color: white; border: none; font-weight: bold; }
         .delete-btn { background: #dc3545; }
-        .save-btn { background: #28a745; }
     </style>
 </head>
 <body>
 
     <div class="controls">
         <select id="characterSelect">
-            <option value="Momsad.png">Äiti (Momsad)</option>
-            <option value="tyttojaisa.png">Isä ja tyttö (tyttojaisa)</option>
-            <option value="Boyseveral.png">Poika (Boyseveral)</option>
+            <option value="Momsad.png|koko">Äiti (Koko kuva)</option>
+            <option value="tyttojaisa.png|koko">Isä ja tyttö</option>
+            <option value="Boyseveral.png|vasen">Poika 1 (Vasen)</option>
+            <option value="Boyseveral.png|oikea">Poika 2 (Oikea)</option>
         </select>
         <button onclick="lisaaHahmo()">Lisää hahmo</button>
         <button onclick="lisaaTeksti()">Lisää teksti</button>
         <button class="delete-btn" onclick="poistaValittu()">Poista valittu</button>
-        <button class="save-btn" onclick="tallennaKuva()">Tallenna</button>
     </div>
 
     <div id="canvas-container">
@@ -34,79 +33,71 @@
     </div>
 
     <script>
-        // Alustetaan kangas
-        var canvas = new fabric.Canvas('canvas', {
-            backgroundColor: '#ffffff',
-            allowTouchScrolling: true
-        });
+        var canvas = new fabric.Canvas('canvas', { backgroundColor: '#ffffff' });
 
-        // LISÄÄ HAHMO
         function lisaaHahmo() {
-            var tiedosto = document.getElementById('characterSelect').value;
-            
+            var rawValue = document.getElementById('characterSelect').value;
+            var parts = rawValue.split('|');
+            var tiedosto = parts[0];
+            var rajat = parts[1];
+
             fabric.Image.fromURL(tiedosto, function(img) {
-                // Säädetään kuvan kokoa niin että se mahtuu kankaalle
-                img.scaleToHeight(300); 
-                img.set({
-                    left: 50,
-                    top: 50,
-                    cornerColor: 'blue',
-                    transparentCorners: false,
-                    cornerSize: 15
-                });
+                var config = {
+                    left: 100,
+                    top: 100,
+                    scaleX: 0.6,
+                    scaleY: 0.6
+                };
+
+                // JOS valittu rajaus "vasen" (esim. Boyseveral.png vasen puoli)
+                if (rajat === 'vasen') {
+                    img.set({
+                        width: img.width / 2, // Näytä vain puolet leveydestä
+                        cropX: 0,             // Aloita vasemmasta reunasta
+                        ...config
+                    });
+                } 
+                // JOS valittu rajaus "oikea"
+                else if (rajat === 'oikea') {
+                    img.set({
+                        width: img.width / 2, // Näytä vain puolet leveydestä
+                        cropX: img.width / 2, // Aloita puolivälistä
+                        ...config
+                    });
+                }
+                else {
+                    img.set(config);
+                }
+
                 canvas.add(img);
                 canvas.setActiveObject(img);
                 canvas.renderAll();
             }, { crossOrigin: 'anonymous' });
         }
 
-        // LISÄÄ TEKSTI JA AVAA NÄPPÄIMISTÖ
         function lisaaTeksti() {
             var teksti = new fabric.IText('Kirjoita tähän...', {
-                left: 150,
-                top: 150,
-                fontSize: 28,
-                fontFamily: 'Arial',
-                fill: 'black',
-                editable: true
+                left: 150, top: 150, fontSize: 28, fontFamily: 'Arial'
             });
-            
             canvas.add(teksti);
             canvas.setActiveObject(teksti);
-            
-            // Yritetään avata näppäimistö mobiilissa
-            setTimeout(function() {
-                teksti.enterEditing();
-                if (teksti.hiddenTextarea) {
-                    teksti.hiddenTextarea.focus();
-                }
-            }, 100);
-            
+            teksti.enterEditing();
+            if(teksti.hiddenTextarea) teksti.hiddenTextarea.focus();
             canvas.renderAll();
         }
 
-        // POISTA VALITTU
         function poistaValittu() {
-            var active = canvas.getActiveObject();
-            if (active) {
-                canvas.remove(active);
-            }
+            canvas.remove(canvas.getActiveObject());
         }
 
-        // TALLENNA KUVA
-        function tallennaKuva() {
-            var dataURL = canvas.toDataURL({ format: 'png', quality: 1 });
-            var link = document.createElement('a');
-            link.download = 'sarjakuva.png';
-            link.href = dataURL;
-            link.click();
-        }
-
-        // Korjaus mobiilikosketukselle (aktivoi editointi helpommin)
-        canvas.on('mouse:down', function(options) {
-            if (options.target && options.target.type === 'i-text') {
-                // Kaksoisnapautus tai hidas kosketus voi vaatia tämän
-                options.target.enterEditing();
+        // Tärkeä korjaus: Estetään litistyminen hiirellä vedettäessä
+        canvas.on('object:scaling', function(e) {
+            var obj = e.target;
+            if (obj.type === 'image') {
+                // Pidetään mittasuhteet lukittuna (ei litistymistä)
+                obj.setControlsVisibility({
+                    mt: false, mb: false, ml: false, mr: false // Poistetaan sivu-kahvat
+                });
             }
         });
     </script>
