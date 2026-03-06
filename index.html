@@ -2,93 +2,113 @@
 <html lang="fi">
 <head>
     <meta charset="utf-8">
-    <title>Sarjakuva-editori</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sarjakuva-generaattori</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/3.6.2/fabric.min.js"></script>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f4f4f4; }
-        .controls { background: white; padding: 20px; border-radius: 10px; margin: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; gap: 10px; flex-wrap: wrap; }
-        #canvas-container { border: 2px solid #333; background: white; }
-        button { padding: 10px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
-        button:hover { background: #0056b3; }
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f0f0; margin: 0; padding: 10px; }
+        .controls { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 10px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 800px; }
+        #canvas-container { border: 2px solid #333; background: white; line-height: 0; max-width: 100%; overflow: auto; }
+        button, select { padding: 10px; cursor: pointer; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; }
+        button { background: #007bff; color: white; border: none; font-weight: bold; }
         .delete-btn { background: #dc3545; }
+        .save-btn { background: #28a745; }
     </style>
 </head>
 <body>
 
     <div class="controls">
         <select id="characterSelect">
-            <option value="aiti">Äiti (vasen ylä)</option>
-            <option value="isa">Isä (oikea ylä)</option>
-            <option value="poika1">Poika (vasen ala)</option>
-            <option value="poika2">Poika kännykällä (oikea ala)</option>
+            <option value="Momsad.png">Äiti (Momsad)</option>
+            <option value="tyttojaisa.png">Isä ja tyttö (tyttojaisa)</option>
+            <option value="Boyseveral.png">Poika (Boyseveral)</option>
         </select>
         <button onclick="lisaaHahmo()">Lisää hahmo</button>
-        <button onclick="lisaaTeksti()">Lisää teksti (ilman kuplaa)</button>
+        <button onclick="lisaaTeksti()">Lisää teksti</button>
         <button class="delete-btn" onclick="poistaValittu()">Poista valittu</button>
-        <button style="background: #28a745;" onclick="tallennaKuva()">Tallenna sarjis</button>
+        <button class="save-btn" onclick="tallennaKuva()">Tallenna</button>
     </div>
 
     <div id="canvas-container">
-        <canvas id="canvas" width="800" height="600"></canvas>
+        <canvas id="canvas" width="800" height="500"></canvas>
     </div>
 
     <script>
-        var canvas = new fabric.Canvas('canvas');
+        // Alustetaan kangas
+        var canvas = new fabric.Canvas('canvas', {
+            backgroundColor: '#ffffff',
+            allowTouchScrolling: true
+        });
 
-        // MUOKKAA TÄHÄN TIEDOSTON NIMI JONKA TALLENSIT GITHUBIIN
-        const KUVATIEDOSTO = 'hahmot.png'; 
-
+        // LISÄÄ HAHMO
         function lisaaHahmo() {
-            var valinta = document.getElementById('characterSelect').value;
+            var tiedosto = document.getElementById('characterSelect').value;
             
-            fabric.Image.fromURL(KUVATIEDOSTO, function(img) {
-                // Määritellään jokaisen hahmon paikka isossa kuvassa (pikseleinä)
-                // Nämä arvot riippuvat kuvasi koosta, voit joutua hienosäätämään näitä
-                var x = 0, y = 0, w = img.width / 2, h = img.height / 2;
-
-                if (valinta === 'isa') { x = w; y = 0; }
-                if (valinta === 'poika1') { x = 0; y = h; }
-                if (valinta === 'poika2') { x = w; y = h; }
-
+            fabric.Image.fromURL(tiedosto, function(img) {
+                // Säädetään kuvan kokoa niin että se mahtuu kankaalle
+                img.scaleToHeight(300); 
                 img.set({
-                    left: 100,
-                    top: 100,
-                    width: w,
-                    height: h,
-                    cropX: x,
-                    cropY: y,
-                    scaleX: 0.8,
-                    scaleY: 0.8
+                    left: 50,
+                    top: 50,
+                    cornerColor: 'blue',
+                    transparentCorners: false,
+                    cornerSize: 15
                 });
-
                 canvas.add(img);
                 canvas.setActiveObject(img);
                 canvas.renderAll();
-            });
+            }, { crossOrigin: 'anonymous' });
         }
 
+        // LISÄÄ TEKSTI JA AVAA NÄPPÄIMISTÖ
         function lisaaTeksti() {
             var teksti = new fabric.IText('Kirjoita tähän...', {
-                left: 200,
-                top: 200,
-                fontSize: 22,
+                left: 150,
+                top: 150,
+                fontSize: 28,
                 fontFamily: 'Arial',
-                backgroundColor: 'rgba(255,255,255,0.7)' // Pieni taustaväri tekstille jos haluat
+                fill: 'black',
+                editable: true
             });
+            
             canvas.add(teksti);
+            canvas.setActiveObject(teksti);
+            
+            // Yritetään avata näppäimistö mobiilissa
+            setTimeout(function() {
+                teksti.enterEditing();
+                if (teksti.hiddenTextarea) {
+                    teksti.hiddenTextarea.focus();
+                }
+            }, 100);
+            
+            canvas.renderAll();
         }
 
+        // POISTA VALITTU
         function poistaValittu() {
-            canvas.remove(canvas.getActiveObject());
+            var active = canvas.getActiveObject();
+            if (active) {
+                canvas.remove(active);
+            }
         }
 
+        // TALLENNA KUVA
         function tallennaKuva() {
-            var dataURL = canvas.toDataURL({ format: 'png' });
+            var dataURL = canvas.toDataURL({ format: 'png', quality: 1 });
             var link = document.createElement('a');
-            link.download = 'minun-sarjakuvani.png';
+            link.download = 'sarjakuva.png';
             link.href = dataURL;
             link.click();
         }
+
+        // Korjaus mobiilikosketukselle (aktivoi editointi helpommin)
+        canvas.on('mouse:down', function(options) {
+            if (options.target && options.target.type === 'i-text') {
+                // Kaksoisnapautus tai hidas kosketus voi vaatia tämän
+                options.target.enterEditing();
+            }
+        });
     </script>
 </body>
 </html> 
