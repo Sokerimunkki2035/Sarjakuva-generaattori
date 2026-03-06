@@ -2,238 +2,93 @@
 <html lang="fi">
 <head>
     <meta charset="utf-8">
-    <title>Sarjakuva: Ihmishahmot + Taustat</title>
+    <title>Sarjakuva-editori</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/3.6.2/fabric.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .controls {
-            margin-bottom: 20px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        select, button {
-            padding: 10px;
-            margin: 5px;
-        }
-        #canvas-container {
-            border: 1px solid black;
-        }
-        canvas {
-            border: 1px solid gray;
-        }
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f4f4f4; }
+        .controls { background: white; padding: 20px; border-radius: 10px; margin: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; gap: 10px; flex-wrap: wrap; }
+        #canvas-container { border: 2px solid #333; background: white; }
+        button { padding: 10px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
+        button:hover { background: #0056b3; }
+        .delete-btn { background: #dc3545; }
     </style>
 </head>
 <body>
+
     <div class="controls">
-        <div>
-            <label>Sukupuoli:</label>
-            <select id="gender">
-                <option value="#3498db">Mies / Poika</option>
-                <option value="#e91e63">Nainen / Tyttö</option>
-            </select>
-        </div>
-        <div>
-            <label>Vartalo:</label>
-            <select id="bodyType">
-                <option value="40">Hoikka</option>
-                <option value="70">Vatsakas</option>
-                <option value="100">Pullea</option>
-            </select>
-        </div>
-        <div>
-            <label>Pituus:</label>
-            <select id="heightScale">
-                <option value="1.2">Pitkä (Aikuinen)</option>
-                <option value="0.7">Lyhyt (Lapsi)</option>
-            </select>
-        </div>
-        <div>
-            <label>Tausta:</label>
-            <select id="background">
-                <option value="white">Valkoinen</option>
-                <option value="#f0f8ff">Taivas</option>
-                <option value="#e6e6fa">Katu</option>
-                <option value="#ffe4b5">Hiekka</option>
-            </select>
-            <button onclick="vaihdaTausta()">Vaihda tausta</button>
-        </div>
-    </div>
-    <div class="controls">
+        <select id="characterSelect">
+            <option value="aiti">Äiti (vasen ylä)</option>
+            <option value="isa">Isä (oikea ylä)</option>
+            <option value="poika1">Poika (vasen ala)</option>
+            <option value="poika2">Poika kännykällä (oikea ala)</option>
+        </select>
         <button onclick="lisaaHahmo()">Lisää hahmo</button>
-        <button onclick="lisaaPuhekupla()">Lisää puhekupla</button>
-        <button onclick="lisaaTeksti()">Lisää teksti</button>
-        <button onclick="poistaValittu()">Poista valittu</button>
-        <button onclick="tallennaKuva()">Tallenna kuva</button>
+        <button onclick="lisaaTeksti()">Lisää teksti (ilman kuplaa)</button>
+        <button class="delete-btn" onclick="poistaValittu()">Poista valittu</button>
+        <button style="background: #28a745;" onclick="tallennaKuva()">Tallenna sarjis</button>
     </div>
+
     <div id="canvas-container">
-        <canvas id="canvas" width="800" height="500"></canvas>
+        <canvas id="canvas" width="800" height="600"></canvas>
     </div>
 
     <script>
-        var canvas = new fabric.Canvas('canvas', {
-            backgroundColor: 'white'
-        });
+        var canvas = new fabric.Canvas('canvas');
 
-        // Vaihda taustaväri
-        function vaihdaTausta() {
-            var vari = document.getElementById('background').value;
-            canvas.setBackgroundColor(vari, canvas.renderAll.bind(canvas));
-        }
+        // MUOKKAA TÄHÄN TIEDOSTON NIMI JONKA TALLENSIT GITHUBIIN
+        const KUVATIEDOSTO = 'hahmot.png'; 
 
-        // Lisää hahmo (sarjakuvamainen ihmishahmo)
         function lisaaHahmo() {
-            var vari = document.getElementById('gender').value;
-            var leveys = parseInt(document.getElementById('bodyType').value);
-            var pituusKerroin = parseFloat(document.getElementById('heightScale').value);
-            var perusKorkeus = 120;
-            var hahmonKorkeus = perusKorkeus * pituusKerroin;
+            var valinta = document.getElementById('characterSelect').value;
+            
+            fabric.Image.fromURL(KUVATIEDOSTO, function(img) {
+                // Määritellään jokaisen hahmon paikka isossa kuvassa (pikseleinä)
+                // Nämä arvot riippuvat kuvasi koosta, voit joutua hienosäätämään näitä
+                var x = 0, y = 0, w = img.width / 2, h = img.height / 2;
 
-            // Pää
-            var paa = new fabric.Circle({
-                radius: 30,
-                fill: vari,
-                top: -30,
-                left: leveys / 2 - 30
+                if (valinta === 'isa') { x = w; y = 0; }
+                if (valinta === 'poika1') { x = 0; y = h; }
+                if (valinta === 'poika2') { x = w; y = h; }
+
+                img.set({
+                    left: 100,
+                    top: 100,
+                    width: w,
+                    height: h,
+                    cropX: x,
+                    cropY: y,
+                    scaleX: 0.8,
+                    scaleY: 0.8
+                });
+
+                canvas.add(img);
+                canvas.setActiveObject(img);
+                canvas.renderAll();
             });
-
-            // Silmät
-            var silma1 = new fabric.Circle({
-                radius: 5,
-                fill: 'black',
-                top: -38,
-                left: leveys / 2 - 20
-            });
-
-            var silma2 = new fabric.Circle({
-                radius: 5,
-                fill: 'black',
-                top: -38,
-                left: leveys / 2 + 10
-            });
-
-            // Suu
-            var suu = new fabric.Path('M -10 0 Q 0 10 10 0', {
-                fill: '',
-                stroke: 'black',
-                strokeWidth: 2,
-                top: -15,
-                left: leveys / 2 - 10
-            });
-
-            // Vartalo
-            var vartalo = new fabric.Rect({
-                width: leveys,
-                height: hahmonKorkeus,
-                fill: vari,
-                top: 0,
-                left: 0,
-                rx: 15,
-                ry: 15
-            });
-
-            // Kädet
-            var kasi1 = new fabric.Line([0, 30, -30, 10], {
-                stroke: vari,
-                strokeWidth: 10,
-                top: 10,
-                left: 0
-            });
-
-            var kasi2 = new fabric.Line([leveys, 30, leveys + 30, 10], {
-                stroke: vari,
-                strokeWidth: 10,
-                top: 10,
-                left: 0
-            });
-
-            // Jalat
-            var jalka1 = new fabric.Line([10, hahmonKorkeus, 10, hahmonKorkeus + 30], {
-                stroke: vari,
-                strokeWidth: 10,
-                top: 0,
-                left: 10
-            });
-
-            var jalka2 = new fabric.Line([leveys - 10, hahmonKorkeus, leveys - 10, hahmonKorkeus + 30], {
-                stroke: vari,
-                strokeWidth: 10,
-                top: 0,
-                left: 0
-            });
-
-            // Ryhmitellään kaikki osat
-            var hahmo = new fabric.Group([paa, silma1, silma2, suu, vartalo, kasi1, kasi2, jalka1, jalka2], {
-                left: 100,
-                top: 100
-            });
-
-            canvas.add(hahmo);
-            canvas.setActiveObject(hahmo);
-            canvas.renderAll();
         }
 
-        // Lisää puhekupla
-        function lisaaPuhekupla() {
-            var puhekupla = new fabric.Path(
-                'M 0 0 Q 100 -50 200 0 L 200 80 Q 100 130 0 80 Z',
-                {
-                    fill: 'white',
-                    stroke: 'black',
-                    strokeWidth: 2,
-                    left: 250,
-                    top: 50
-                }
-            );
-
-            canvas.add(puhekupla);
-            canvas.setActiveObject(puhekupla);
-            canvas.renderAll();
-        }
-
-        // Lisää teksti (puhekuplaan)
         function lisaaTeksti() {
             var teksti = new fabric.IText('Kirjoita tähän...', {
-                left: 270,
-                top: 70,
-                fontSize: 16,
+                left: 200,
+                top: 200,
+                fontSize: 22,
                 fontFamily: 'Arial',
-                fill: 'black',
-                width: 150,
-                textAlign: 'center'
+                backgroundColor: 'rgba(255,255,255,0.7)' // Pieni taustaväri tekstille jos haluat
             });
             canvas.add(teksti);
-            canvas.setActiveObject(teksti);
-            canvas.renderAll();
         }
 
-        // Poista valittu objekti
         function poistaValittu() {
-            var aktiivinen = canvas.getActiveObject();
-            if (aktiivinen) {
-                canvas.remove(aktiivinen);
-                canvas.renderAll();
-            }
+            canvas.remove(canvas.getActiveObject());
         }
 
-        // Tallenna kuva
         function tallennaKuva() {
-            var dataURL = canvas.toDataURL({
-                format: 'png',
-                quality: 1
-            });
+            var dataURL = canvas.toDataURL({ format: 'png' });
             var link = document.createElement('a');
-            link.download = 'sarjakuva.png';
+            link.download = 'minun-sarjakuvani.png';
             link.href = dataURL;
             link.click();
         }
     </script>
 </body>
-</html>
+</html> 
