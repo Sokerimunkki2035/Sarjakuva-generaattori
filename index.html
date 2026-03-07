@@ -1,52 +1,32 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="fi">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sarjakuva-generaattori 2.0</title>
+    <title>Sarjakuva-generaattori 3.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/3.6.2/fabric.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
-        
         .panel { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 15px; width: 100%; max-width: 800px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
-        
         .control-group { display: flex; flex-direction: column; gap: 5px; min-width: 120px; }
         label { font-size: 12px; font-weight: bold; color: #555; }
-        
-        select, button, input[type="range"] { padding: 8px; border-radius: 6px; border: 1px solid #ddd; }
-        
-        button { background: #007bff; color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button:active { transform: scale(0.95); }
+        select, button, input[type="range"] { padding: 10px; border-radius: 6px; border: 1px solid #ddd; font-size: 14px; }
+        button { background: #007bff; color: white; border: none; font-weight: bold; cursor: pointer; }
         button.secondary { background: #6c757d; }
         button.danger { background: #dc3545; }
         button.success { background: #28a745; }
-
-        #canvas-wrapper { 
-            box-shadow: 0 0 20px rgba(0,0,0,0.2);
-            border: 2px solid #333;
-            background: white;
-            touch-action: none; /* Estää sivun skrollauksen kun piirretään */
-        }
+        #canvas-wrapper { box-shadow: 0 0 20px rgba(0,0,0,0.2); border: 2px solid #333; background: white; line-height: 0; }
     </style>
 </head>
 <body>
 
     <div class="panel">
         <div class="control-group">
-            <label>Hahmon väri</label>
-            <select id="gender">
-                <option value="#3498db">Sininen</option>
-                <option value="#e91e63">Punainen</option>
-                <option value="#2ecc71">Vihreä</option>
-                <option value="#f1c40f">Keltainen</option>
-            </select>
-        </div>
-        <div class="control-group">
-            <label>Vartalo</label>
-            <select id="bodyType">
-                <option value="40">Hoikka</option>
-                <option value="70">Normaali</option>
-                <option value="110">Pullea</option>
+            <label>Valitse hahmo</label>
+            <select id="charSelect">
+                <option value="Boyseveral.png">Poika</option>
+                <option value="tyttojaisa.png">Tyttö</option>
+                <option value="Momsad.png">Äiti</option>
             </select>
         </div>
         <div class="control-group">
@@ -55,17 +35,16 @@
                 <option value="white">Valkoinen</option>
                 <option value="#87CEEB">Taivas</option>
                 <option value="#95a5a6">Katu</option>
-                <option value="#f3e5ab">Hiekka</option>
             </select>
         </div>
         <div class="control-group">
             <label>Tekstin koko</label>
-            <input type="range" id="textSize" min="10" max="100" value="30" oninput="muutaTekstinKokoa(this.value)">
+            <input type="range" id="textSize" min="12" max="80" value="25" oninput="muutaTekstinKokoa(this.value)">
         </div>
     </div>
 
     <div class="panel">
-        <button onclick="lisaaHahmo()">+ Hahmo</button>
+        <button onclick="lisaaKuvaHahmo()">+ Lisää hahmo</button>
         <button onclick="lisaaPuhekupla()">+ Puhekupla</button>
         <button onclick="lisaaTeksti()">+ Teksti</button>
         <button class="secondary" onclick="siirraEteen()">Tuo eteen</button>
@@ -78,18 +57,20 @@
     </div>
 
     <script>
-        // Alustetaan canvas ja säädetään koko ruudun mukaan
         var canvas = new fabric.Canvas('canvas', {
-            width: Math.min(window.innerWidth - 40, 800),
+            width: Math.min(window.innerWidth - 30, 800),
             height: 500,
             backgroundColor: 'white'
         });
 
-        // Tuo valittu kohde aina eteen kun sitä klikataan
+        // Tuo kohde eteenpäin ja varmista tekstin muokkaus
         canvas.on('mouse:down', function(e) {
             if (e.target) {
                 e.target.bringToFront();
-                canvas.renderAll();
+                if (e.target.type === 'i-text') {
+                    // Pakotetaan tekstin muokkaustila päälle mobiilissa
+                    setTimeout(() => { e.target.enterEditing(); e.target.selectAll(); }, 100);
+                }
             }
         });
 
@@ -97,49 +78,48 @@
             canvas.setBackgroundColor(document.getElementById('background').value, canvas.renderAll.bind(canvas));
         }
 
-        function lisaaHahmo() {
-            var vari = document.getElementById('gender').value;
-            var w = parseInt(document.getElementById('bodyType').value);
-            
-            var paa = new fabric.Circle({ radius: 25, fill: vari, left: w/2-25, top: -45 });
-            var vartalo = new fabric.Rect({ width: w, height: 100, fill: vari, rx: 10, ry: 10 });
-            var jalkaL = new fabric.Rect({ width: 12, height: 30, fill: vari, left: 5, top: 100 });
-            var jalkaR = new fabric.Rect({ width: 12, height: 30, fill: vari, left: w-17, top: 100 });
-
-            var hahmo = new fabric.Group([paa, vartalo, jalkaL, jalkaR], {
-                left: 50, top: 150,
-                cornerSize: 24, // Isommat kahvat mobiilille
-                transparentCorners: false
+        // Ladataan hahmo kuvatiedostosta (repositoriostasi)
+        function lisaaKuvaHahmo() {
+            var tiedosto = document.getElementById('charSelect').value;
+            fabric.Image.fromURL(tiedosto, function(img) {
+                img.scaleToWidth(150);
+                img.set({
+                    left: 100,
+                    top: 100,
+                    cornerSize: 30,
+                    transparentCorners: false
+                });
+                canvas.add(img);
+                canvas.setActiveObject(img);
             });
-            canvas.add(hahmo);
         }
 
         function lisaaPuhekupla() {
             var kupla = new fabric.Path('M 20 0 L 180 0 Q 200 0 200 20 L 200 80 Q 200 100 180 100 L 60 100 L 30 130 L 40 100 L 20 100 Q 0 100 0 80 L 0 20 Q 0 0 20 0 Z', {
                 fill: 'white', stroke: 'black', strokeWidth: 2,
-                left: 100, top: 50,
-                cornerSize: 24,
-                transparentCorners: false
+                left: 150, top: 50, cornerSize: 30, transparentCorners: false
             });
             canvas.add(kupla);
         }
 
         function lisaaTeksti() {
-            var teksti = new fabric.IText('Kirjoita...', {
-                left: 120, top: 70,
-                fontSize: 30,
+            var teksti = new fabric.IText('Kirjoita tähän', {
+                left: 170, top: 70,
+                fontSize: 25,
                 fontFamily: 'Arial',
-                cornerSize: 30,
+                cornerSize: 35,
                 transparentCorners: false,
                 cornerColor: '#007bff'
             });
             canvas.add(teksti);
             canvas.setActiveObject(teksti);
+            // Aktivoi kirjoitus heti
+            setTimeout(() => { teksti.enterEditing(); }, 200);
         }
 
         function muutaTekstinKokoa(uusiKoko) {
             var obj = canvas.getActiveObject();
-            if (obj && (obj.type === 'i-text' || obj.type === 'text')) {
+            if (obj && obj.type === 'i-text') {
                 obj.set("fontSize", parseInt(uusiKoko));
                 canvas.renderAll();
             }
@@ -147,11 +127,12 @@
 
         function siirraEteen() {
             var obj = canvas.getActiveObject();
-            if (obj) obj.bringToFront();
+            if (obj) { obj.bringToFront(); canvas.renderAll(); }
         }
 
         function poistaValittu() {
-            canvas.remove(canvas.getActiveObject());
+            var obj = canvas.getActiveObject();
+            if (obj) canvas.remove(obj);
         }
 
         function tallennaKuva() {
