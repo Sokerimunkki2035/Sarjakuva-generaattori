@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sarjakuva-generaattori 4.0</title>
+    <title>Sarjakuva-generaattori 4.1</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/3.6.2/fabric.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
@@ -32,7 +32,11 @@
                 <option value="Boyseveral.png">Poika</option>
                 <option value="tyttojaisa.png">Tyttö</option>
                 <option value="Momsad.png">Äiti</option>
-                <option value="isatulee.png">Isä</option> </select>
+                <option value="isatulee.png">Isä</option>
+                <option value="Selinda.png">Selinda</option>
+                <option value="Supersankari.png">Supersankari</option>
+                <option value="SadDad.jpeg">Sad Dad</option>
+            </select>
         </div>
         <button onclick="lisaaKuvaHahmo()">+ Hahmo</button>
         <button onclick="lisaaPuhekupla()">+ Kupla</button>
@@ -67,7 +71,6 @@
             backgroundColor: 'white'
         });
 
-        // Tuo kohde eteenpäin, mutta EI avata näppäimistöä automaattisesti siirrossa
         canvas.on('mouse:down', function(e) {
             if (e.target) {
                 e.target.bringToFront();
@@ -78,7 +81,7 @@
         function lisaaKuvaHahmo() {
             var tiedosto = document.getElementById('charSelect').value;
             fabric.Image.fromURL(tiedosto, function(img) {
-                img.scaleToWidth(120);
+                img.scaleToWidth(150);
                 img.set({ left: 50, top: 50 });
                 canvas.add(img);
                 canvas.setActiveObject(img);
@@ -100,8 +103,6 @@
             canvas.add(teksti);
             canvas.setActiveObject(teksti);
         }
-
-        // --- OHJAUSPANEELIN TOIMINNOT ---
 
         function liikuta(dx, dy) {
             var obj = canvas.getActiveObject();
